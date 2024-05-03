@@ -9,42 +9,75 @@ int infaredRecieverOne_pin = 2;
 IRrecv irrecv_one(infaredRecieverOne_pin);     //Infared reciever one IR reciever library and reciever controlled.
 decode_results results_infaredRecieverOne;      //results for the first IR reciever.
 
-//Remote Information
-int JVC_main_remote_current_input = 0; //Main infared remote for boat control. Current input ID stored here. Input IDs: 0 == null
+//Motor power variables; Holds booleans, controlling weather motors should be on or off.
+int rearLeftIsPowered = 0; //0 = false, 1 = true
+int rearRightIsPowered = 0;
+
+//Motor ports
+const int rearLeftMotorPort = 3;
+const int rearRightMotorPort = 4;
 
 void setup() {
+
+  //Set both drive motor ports to output mode
+  pinMode(rearLeftMotorPort, OUTPUT);
+  pinMode(rearRightMotorPort, OUTPUT);
+
+  irrecv_one.enableIRIn(); //Enable inputs and detection from "irrecv_one" (IR reciever one for control inputs) IR module.
   Serial.begin(9600); //Start Serial IO communication.
-  Serial.print("Application Started");
+  Serial.print("Application Started"); //Log application start.
 }
 
 void loop() {
   
-  infaredRecieverController(); //Check inputs from all recievers.
-
-}
-
-//Controls/Manages all Infared recievers onboard of the RC Boat; Manages input and possibly output.
-void infaredRecieverController() {
-  
-  //Each frame/application cycle, check to see the input, if nothing, then do nothing.
-  //Check JVC Remote controller, "RM-C3012".
-  infaredRecieverOneController();
-
-}
-
-
-
-//Manages data/input from infared reciever one.
-void infaredRecieverOneController() {
-  
-  //Get the results from the IR Module, and store them in results, to be looped through latter in this method, which will then determine the current Main Ir Remote input stored @ "JVC_main_remote_current_input"
-  irrecv_one.decode(&results_infaredRecieverOne);
-
-  //Loop through the results, and set the variable "JVC_main_remote_current_input" to the remotes current input status.
-  switch (results_infaredRecieverOne.value) {
-    
+  //If input is detected from the "irrecv_one" main IR input reciever for boat control, the loop through all the known inputs, and carry out an action or set a value for other parts of the application to use.
+  if (irrecv_one.decode(&results_infaredRecieverOne)) {
+    irrecv_one_inputSwitch(); //Loop through all inputs, and carry out an action or set a value for later use in the application
+    irrecv_one.resume(); //Start checking for IR inputs on the main IR input reciever for boat control.
   }
 
-  //Infared reciever one input avaluation is complete.
-  irrecv_one.resume(); // receive the next value / delete/destroy the previously recieved value and check for the next input.
+  drive_motorPowerController(); //Manage/Control the motors, based on boolean values, as to weather the motors should be on or not. These values are mainly originating from inputs from the IR remote in method "irrecv_one_inputSwitch()";
 }
+
+
+//Controls the main drive motors.
+//Controls boats motors based on the motor power variables.
+void drive_motorPowerController() {
+  //If the rear left drive motor has its power status set to on, then power it.
+  if (rearLeftIsPowered == 1) {
+    digitalWrite(rearLeftMotorPort, 255);
+  } else {
+    digitalWrite(rearLeftMotorPort, 0);
+  }
+
+  //If the rear right drive motor has its power status set to on, then power it.
+  if (rearRightIsPowered == 1) {
+    digitalWrite(rearRightMotorPort, 255);
+  } else {
+    digitalWrite(rearRightMotorPort, 0);
+  }
+}
+
+
+//Sets values and carries out actions based on the input from "irrcev_one", the main IR input reciever.
+//Inputs for boat control.
+void irrecv_one_inputSwitch() {
+  switch (results_infaredRecieverOne.value) {
+    //If "up-arrow" is pressed, drive forward.
+    case 3772778233:
+      rearLeftIsPowered = 1;
+      rearRightIsPowered = 1;
+      break;
+    
+    //If "OK" is pressed, break/stop (cut the motors power).
+    case 3772782313:
+      rearLeftIsPowered = 0;
+      rearRightIsPowered = 0;
+      break;
+  }
+}
+
+
+
+
+
