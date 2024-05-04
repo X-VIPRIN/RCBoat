@@ -1,0 +1,2 @@
+Device wiring pins:
+	"irrecv_one", main IR reciever for boat control: Digital Pin 2
