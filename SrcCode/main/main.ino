@@ -69,6 +69,18 @@ void irrecv_one_inputSwitch() {
       rearRightIsPowered = 1;
       break;
     
+    //If "left-arrow", then spin the right motor to turn left.
+    case 3772819033:
+      rearLeftIsPowered = 0;
+      rearRightIsPowered = 1;
+      break;
+
+    //If the "right-arrow" is pressed, then spin the left motor to turn right.
+    case 3772794553:
+      rearLeftIsPowered = 1;
+      rearRightIsPowered = 0;
+      break;
+
     //If "OK" is pressed, break/stop (cut the motors power).
     case 3772782313:
       rearLeftIsPowered = 0;
